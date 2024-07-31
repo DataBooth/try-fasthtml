@@ -1,0 +1,12 @@
+[server]
+host = "127.0.0.1"
+port = 5001
+
+[data]
+url = "https://raw.githubusercontent.com/justmarkham/DAT8/master/data/u.user"
+delimiter = "|"
+table_name = "movies"
+default_query = "SELECT occupation, COUNT(*) AS count FROM {table_name} GROUP BY occupation ORDER BY count DESC LIMIT 5"
+
+[styles]
+dataframe_css = "app/dataframe.css"
