@@ -3,6 +3,7 @@ import pandas as pd
 import toml
 from fasthtml.common import (
     H1,
+    H2,
     Button,
     Div,
     Form,
@@ -25,7 +26,7 @@ class DataSource:
         self.config = config
         self.con = duckdb.connect(":memory:")
         self.table_name = self.load_data(table_name=self.config["data"]["table_name"])
-        self.default_query = f"{self.config['data']['default_query']}".replace(
+        self.sample_query = f"{self.config['data']['sample_query']}".replace(
             "{table_name}", self.table_name
         )
 
@@ -57,30 +58,43 @@ class MovieDataApp:
             self.dataframe_style = f.read()
 
     def get(self):
-        result = self.data_source.execute_query(self.data_source.default_query)
+        sample_result = self.data_source.execute_query(self.data_source.sample_query)
+        return self.render_page(sample_result)
+
+    def render_page(self, sample_result, query_result=None, query_message=None):
         return Div(
             Style(self.dataframe_style),
             H1(f"Data Display - {self.data_source.table_name} table"),
-            P("Top 5 Occupations by User Count:"),
-            md(f"`{self.data_source.default_query}`"),
-            self.create_table(result),
+            H2("Sample of Data"),
+            md(f"`{self.data_source.sample_query}`"),
+            md("---"),
+            self.create_table(sample_result),
+            H1("Custom SQL Query"),
             P("Enter your SQL query:"),
             Form(
                 Input(type="text", name="query", placeholder="Enter SQL query here"),
                 Button("Submit", type="submit"),
                 hx_post="/query",
+                hx_target="#query-result",
+            ),
+            Div(
+                P(query_message) if query_message else "",
+                self.create_table(query_result) if query_result is not None else "",
+                id="query-result",
             ),
         )
 
     async def query(self, request):
         form_data = await request.form()
         query = form_data.get("query", "")
-        result = self.data_source.execute_query(query)
-        return Div(Style(self.dataframe_style), H1("Query Results"), self.create_table(result))
+        try:
+            result = self.data_source.execute_query(query)
+            return Div(P(f"Query executed successfully: {query}"), self.create_table(result))
+        except Exception as e:
+            return Div(P(f"Error executing query: {str(e)}"))
 
     def create_table(self, df):
         return Table(
-            # {"class": "dataframe"},
             Tr(*[Th(col) for col in df.columns]),
             *[Tr(*[Td(cell) for cell in row]) for row in df.values],
         )
