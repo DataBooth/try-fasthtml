@@ -1,5 +1,4 @@
 import duckdb
-import markdown
 import pandas as pd
 import toml
 from fasthtml.common import (
@@ -8,51 +7,18 @@ from fasthtml.common import (
     Div,
     Form,
     Input,
-    MarkdownJS,
     P,
     Style,
     Table,
     Td,
     Th,
     Tr,
-    Ul,
     fast_app,
     serve,
 )
 
+from fasthtml_helper import md
 
-def render_markdown(md_content):
-    """
-    Convert Markdown content to FastHTML components.
-    
-    Parameters:
-    md_content (str): The Markdown content to be converted.
-    
-    Returns:
-    Div: A FastHTML Div containing the rendered content.
-    """
-    html_content = markdown.markdown(md_content)
-    
-    # Parse the HTML content and convert it to FastHTML components
-    components = []
-    for line in html_content.split('\n'):
-        if line.startswith('<h1>'):
-            components.append(H1(line[4:-5]))
-        elif line.startswith('<h2>'):
-            components.append(H2(line[4:-5]))
-        elif line.startswith('<h3>'):
-            components.append(H3(line[4:-5]))
-        elif line.startswith('<p>'):
-            components.append(P(line[3:-4]))
-        elif line.startswith('<ul>'):
-            ul_items = []
-            for item in line[4:-5].split('<li>'):
-                if item:
-                    ul_items.append(Li(item.strip('</li>')))
-            components.append(Ul(*ul_items))
-        # Add more conditions for other HTML elements as needed
-    
-    return Div(*components)
 
 class DataSource:
     def __init__(self, config):
@@ -96,7 +62,7 @@ class MovieDataApp:
             Style(self.dataframe_style),
             H1(f"Data Display - {self.data_source.table_name} table"),
             P("Top 5 Occupations by User Count:"),
-            render_markdown(f"`{self.data_source.default_query}`"),
+            md(f"`{self.data_source.default_query}`"),
             self.create_table(result),
             P("Enter your SQL query:"),
             Form(
